@@ -5,11 +5,12 @@ const CopyPlugin = require("copy-webpack-plugin");
 module.exports = {
   reactStrictMode: true,
   //distDir: 'build',
-  webpack: (config, {  }) => {
+  webpack: (config, { }) => {
 
     config.resolve.extensions.push(".ts", ".tsx");
     config.resolve.fallback = { fs: false };
-
+    config.optimization.minimize = false;
+    mode: 'development',
     config.plugins.push(
     new NodePolyfillPlugin(), 
     new CopyPlugin({

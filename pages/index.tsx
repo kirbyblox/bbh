@@ -16,7 +16,7 @@ bridgeMoves.push('Pass', 'X', 'XX');
 bridgeMoves.unshift('End');
 
 export default function Home() {
-  const [moves, setMoves] = useState<number[]>([0,1,2,3,4,35]);
+  const [moves, setMoves] = useState<number[]>([1,2,3,4,34]);
   const [special, setSpecial] = useState<number[]>([0,0,0,0]);   // 0,1,2 -> no, double, redouble
   const [levels, setLevels] = useState<number[]>([1,2,3,4,5,6,7]);
   const [focus, setFocus] = useState(1);
