@@ -20,7 +20,7 @@ export default function Home() {
   const [moves, setMoves] = useState<number[]>([1]);
   const [special, setSpecial] = useState<number[]>([0,0,0,0]);   // 0,1,2 -> no, double, redouble
   const [levels, setLevels] = useState<number[]>([1,2,3,4,5,6,7]);
-  const [focus, setFocus] = useState(1);
+  const [focus, setFocus] = useState(0);
   const [currSuits, setSuits] = useState<string[]>(suits);
 
   function addMoves (index: number) {
@@ -30,6 +30,25 @@ export default function Home() {
     const newArray = moves.slice(0, index);
     setMoves(newArray);
   };
+  function softmax(logits: number[]): number[] {
+    const maxLogit = Math.max(...logits);
+    const exps = logits.map((logit) => Math.exp(logit - maxLogit));
+    const sumExps = exps.reduce((a, b) => a + b);
+    return exps.map((exp) => exp / sumExps);
+}
+
+function sample(logits: number[]): number {
+    const probabilities = softmax(logits);
+    let sample = Math.random();
+    let total = 0;
+    for (let i = 0; i < probabilities.length; i++) {
+        total += probabilities[i];
+        if (sample < total) {
+            return i;
+        }
+    }
+    return probabilities.length - 1;
+}
 
   const submitInference = async () => {
     try {
@@ -46,6 +65,7 @@ export default function Home() {
     const dataC = results.output.data; // should be 50, 39
     let numRows = 50;
     let numCols = 39;
+    let temp = 0.
 
     // Check if the total number of elements matches
     if (dataC.length !== numRows * numCols) {
@@ -62,12 +82,14 @@ export default function Home() {
         }
     }
 
-    // reshapedArray is now a 2D-like structure of BigInt64Arrays
-    let array = reshapedArray[moves.length - 1];
-    let indexOfLargest = array.reduce((maxIndex, currentElement, currentIndex, arr) => {
-      return currentElement > arr[maxIndex] ? currentIndex : maxIndex;
-  }, 0);
-    addMoves(indexOfLargest - 1);
+    let temperature = 0.5;
+    
+    let array = reshapedArray[moves.length - 1].map(logit => logit / temperature);
+  //   let indexOfLargest = array.reduce((maxIndex, currentElement, currentIndex, arr) => {
+  //     return currentElement > arr[maxIndex] ? currentIndex : maxIndex;
+  // }, 0);
+    let next = sample(array);
+    addMoves(next - 1);
     }
     catch (e) {
       console.error(`failed to inference ONNX model: ${e}.`);
