@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import * as ort from 'onnxruntime-web';
+import Head from "next/head";
 
 let bridgeMoves: string[] = [];
 const suits = ['♣', '♦', '♥', '♠', 'NT'];
@@ -75,6 +76,12 @@ export default function Home() {
 
 
   return (
+    <>
+    <Head>
+        <title>Bridge Bid Hallucinator</title>
+        <meta name="description" content="RNN model that generates bids based on past bids" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
     <main>
       <div className = "mx-auto w-1/3 grid grid-cols-4">
         {moves.map((move, index) => (
@@ -105,7 +112,7 @@ export default function Home() {
       </div>
     </main>
     
-
+  </>
   );
 }
 
