@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
@@ -12,7 +11,6 @@ module.exports = {
     config.optimization.minimize = false;
     mode: 'development',
     config.plugins.push(
-    new NodePolyfillPlugin(), 
     new CopyPlugin({
       patterns: [
         {
