@@ -1,9 +1,11 @@
 ## Bridge Bid Hallucinator
-**[Link](https://bbh-amber.vercel.app/)**
+**[link](https://bbh-amber.vercel.app/)**
 
 Bridge bot that hallucinates bids based on past bids.
 
 Model is a simple character level RNN trained on ~ 200 bidding sequences that runs client-side.
+
+Based on this **[template](https://github.com/microsoft/onnxruntime-nextjs-template)**
 
 
 Currently WIP
