@@ -1,5 +1,5 @@
 ## Bridge Bid Hallucinator
-bbh-amber.vercel.app
+**[Link](https://bbh-amber.vercel.app/)**
 
 Bridge bot that hallucinates bids based on past bids.
 
@@ -7,6 +7,7 @@ Model is a simple character level RNN trained on ~ 200 bidding sequences that ru
 
 
 Currently WIP
+
 To do:
 - More sophisticated sampling
 - Clean up UI
