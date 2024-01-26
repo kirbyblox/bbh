@@ -119,8 +119,8 @@ function sample(logits: number[]): number {
         ))}
       </div>
       <div className = "mx-auto w-1/2 grid grid-cols-9 bidbox">
-      <div className = "col-span-1 text-center rounded border border-blue-500 my-2 mx-2 bg-blue-200 hover:bg-blue-300">
-          Pass
+      <div className = "col-span-1 text-center rounded border border-blue-500 my-2 mx-2 bg-blue-200 hover:bg-blue-300" onClick={() => addMoves(36)}>
+          X
         </div>
         {suits.map((move, index) => (
           <div className={"text-center rounded border border-blue-500 my-2 mx-2 bg-blue-200 hover:bg-blue-300"}onClick={() => addMoves(5 * focus + index)} key={index}>{move}</div>
@@ -129,7 +129,7 @@ function sample(logits: number[]): number {
       </div>
       <div className = "mx-auto w-1/2 grid grid-cols-9 bidbox">
         <div className = "col-span-2 text-center rounded border border-red-500 my-2 mx-2 bg-red-200 hover:bg-red-300" onClick={() => submitInference()}>
-          Submit
+          Generate
         </div>
       </div>
     </main>
