@@ -37,64 +37,123 @@ export default function Home() {
     return exps.map((exp) => exp / sumExps);
 }
 
-function sample(logits: number[]): number {
-    const probabilities = softmax(logits);
-    let sample = Math.random();
-    let total = 0;
-    for (let i = 0; i < probabilities.length; i++) {
-        total += probabilities[i];
-        if (sample < total) {
-            return i;
-        }
-    }
-    return probabilities.length - 1;
+function minPSample(logits: number[], minP: number): number {
+  // Get probabilities and their original indices
+  const probabilities = softmax(logits);
+  const indexedProbs = probabilities.map((p, i) => ({ p, index: i }));
+  
+  // Sort by probability in descending order
+  indexedProbs.sort((a, b) => b.p - a.p);
+  
+  // Filter probabilities above minP threshold
+  const filteredProbs = indexedProbs.filter(x => x.p >= minP);
+  
+  // If nothing passes threshold, just take the highest probability token
+  if (filteredProbs.length === 0) {
+      return indexedProbs[0].index;
+  }
+  
+  // Renormalize the remaining probabilities
+  const sum = filteredProbs.reduce((acc, x) => acc + x.p, 0);
+  const normalizedProbs = filteredProbs.map(x => ({...x, p: x.p / sum}));
+  
+  // Sample using the same inverse CDF method
+  let sample = Math.random();
+  let total = 0;
+  for (let i = 0; i < normalizedProbs.length; i++) {
+      total += normalizedProbs[i].p;
+      if (sample < total) {
+          return normalizedProbs[i].index;
+      }
+  }
+  
+  return normalizedProbs[normalizedProbs.length - 1].index;
 }
 
-  const submitInference = async () => {
-    try {
-    const session = await ort.InferenceSession.create('./_next/static/chunks/pages/rnn.onnx');
-    let bigMoves = moves.map(num => BigInt(num));
-    let padded = new BigInt64Array(50);
-    // padded[0] = BigInt(0);
-    for (let i = 0; i < moves.length && i < 50; i++) {
-      padded[i] = bigMoves[i];
-    }
-    const paddedTensor = new ort.Tensor('int64', padded, [1,50]);
-    const feeds = { input: paddedTensor };
-    const results = await session.run(feeds);
-    const dataC = results.output.data; // should be 50, 39
-    let numRows = 50;
-    let numCols = 39;
-    let temp = 0.
-
-    // Check if the total number of elements matches
-    if (dataC.length !== numRows * numCols) {
-        throw new Error("The total number of elements does not match the desired shape.");
-    }
-
-    // Create the new 2D-like structure
-    let reshapedArray = new Array(numRows).fill(null).map(() => new Array(numCols));
-
-    // Copy data into the new structure
-    for (let row = 0; row < numRows; row++) {
-        for (let col = 0; col < numCols; col++) {
-            reshapedArray[row][col] = dataC[row * numCols + col];
-        }
-    }
-
-    let temperature = 0.5;
-    
-    let array = reshapedArray[moves.length - 1].map(logit => logit / temperature);
-  //   let indexOfLargest = array.reduce((maxIndex, currentElement, currentIndex, arr) => {
-  //     return currentElement > arr[maxIndex] ? currentIndex : maxIndex;
-  // }, 0);
-    let next = sample(array);
-    addMoves(next - 1);
-    }
-    catch (e) {
+const submitInference = async () => {
+  try {
+      const session = await ort.InferenceSession.create('./_next/static/chunks/pages/rnn.onnx');
+      let next = 1;
+      let currentMoves = [...moves];  // Start with current moves
+      
+      while (next != 0 && currentMoves.length < 50) {  // Added length check for safety
+          let bigMoves = currentMoves.map(num => BigInt(num));
+          let padded = new BigInt64Array(50);
+          for (let i = 0; i < currentMoves.length && i < 50; i++) {
+              padded[i] = bigMoves[i];
+          }
+          const paddedTensor = new ort.Tensor('int64', padded, [1,50]);
+          const feeds = { input: paddedTensor };
+          
+          const results = await session.run(feeds);
+          const dataC = results.output.data;
+          let numRows = 50;
+          let numCols = 39;
+          
+          let reshapedArray = new Array(numRows).fill(null).map(() => new Array(numCols));
+          for (let row = 0; row < numRows; row++) {
+              for (let col = 0; col < numCols; col++) {
+                  reshapedArray[row][col] = dataC[row * numCols + col];
+              }
+          }
+          
+          let temperature = 0.5;
+          let array = reshapedArray[currentMoves.length - 1].map(logit => logit / temperature);
+          next = minPSample(array, 0.1);
+          
+          if (next !== 0) {
+              currentMoves.push(next);  // Update our local array
+              console.log("Adding move:", next);
+          }
+      }
+      
+      // After the loop finishes, update state once with all new moves
+      if (currentMoves.length > moves.length) {
+          setMoves(currentMoves);
+      }
+  }
+  catch (e) {
       console.error(`failed to inference ONNX model: ${e}.`);
-    }
-  };
+  }
+};
+const generateOneMove = async () => {
+  try {
+      const session = await ort.InferenceSession.create('./_next/static/chunks/pages/rnn.onnx');
+      let currentMoves = [...moves];
+      
+      let bigMoves = currentMoves.map(num => BigInt(num));
+      let padded = new BigInt64Array(50);
+      for (let i = 0; i < currentMoves.length && i < 50; i++) {
+          padded[i] = bigMoves[i];
+      }
+      const paddedTensor = new ort.Tensor('int64', padded, [1,50]);
+      const feeds = { input: paddedTensor };
+      
+      const results = await session.run(feeds);
+      const dataC = results.output.data;
+      let numRows = 50;
+      let numCols = 39;
+      
+      let reshapedArray = new Array(numRows).fill(null).map(() => new Array(numCols));
+      for (let row = 0; row < numRows; row++) {
+          for (let col = 0; col < numCols; col++) {
+              reshapedArray[row][col] = dataC[row * numCols + col];
+          }
+      }
+      
+      let temperature = 0.5;
+      let array = reshapedArray[currentMoves.length - 1].map(logit => logit / temperature);
+      let next = minPSample(array, 0.1);
+      
+      if (next !== 0) {
+          setMoves([...currentMoves, next]);
+          console.log("Adding single move:", next);
+      }
+  }
+  catch (e) {
+      console.error(`failed to inference ONNX model: ${e}.`);
+  }
+};
 
 
   return (
@@ -128,10 +187,35 @@ function sample(logits: number[]): number {
         
       </div>
       <div className = "mx-auto w-1/2 grid grid-cols-9 bidbox">
-        <div className = "col-span-2 text-center rounded border border-red-500 my-2 mx-2 bg-red-200 hover:bg-red-300" onClick={() => submitInference()}>
-          Generate
+    <div className = "col-span-1 text-center rounded border border-red-500 my-2 mx-2 bg-red-200 hover:bg-red-300" onClick={() => generateOneMove()}>
+        +1
+    </div>
+    <div className = "col-span-1 text-center rounded border border-red-500 my-2 mx-2 bg-red-200 hover:bg-red-300" onClick={() => submitInference()}>
+        Generate
+    </div>
+</div>
+<div className="mx-auto max-w-2xl mt-12 p-6 bg-gray-50 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">How to Use</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-medium mb-2">Manual Bidding:</h3>
+              <p className="text-gray-700">1. Click a number (1-7) to select the level</p>
+              <p className="text-gray-700">2. Click a suit symbol (♣, ♦, ♥, ♠, NT) to make your bid</p>
+              <p className="text-gray-700">3. Use "Pass" or "X" for those special bids</p>
+              <p className="text-gray-700">4. Click any bid in the sequence to remove it and all subsequent bids</p>
+            </div>
+            
+            <div>
+              <h3 className="font-medium mb-2">Bid Generation:</h3>
+              <p className="text-gray-700">• Click "+1" to generate a single bid</p>
+              <p className="text-gray-700">• Click "Generate" to complete the entire auction</p>
+            </div>
+            
+            <div className="mt-4 p-4 bg-blue-50 rounded">
+              <p className="text-sm text-blue-800">Note: bids may not be accurate</p>
+            </div>
+          </div>
         </div>
-      </div>
     </main>
     
   </>

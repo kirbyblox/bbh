@@ -1,26 +1,36 @@
-## Bridge Bid Hallucinator
-**[link](https://bbh-amber.vercel.app/)**
-
+# Bridge Bid Hallucinator
 Bridge bot that hallucinates bids based on past bids.
 
-Model is a simple character level RNN trained on ~ 200 bidding sequences that runs client-side.
+## Live Demo
 
-Based on this **[template](https://github.com/microsoft/onnxruntime-nextjs-template)**
+Try it out at: [https://bbh-amber.vercel.app/](https://bbh-amber.vercel.app/)
 
+## Features
 
-Currently WIP
+- Interactive bidding interface with support for:
+  - Standard bid levels (1-7)
+  - All suits (♣, ♦, ♥, ♠, NT)
+  - Special bids (Pass, Double)
+- Neural network-powered bid generation
+- Single bid generation mode
+- Complete auction generation
+- Responsive design with Tailwind CSS
 
-To do:
-- More sophisticated sampling
-- Clean up UI
-- Incorporate more bridge rules and bids
-- Make website mobile friendly
-- Figure out how to minify js without breaking model
-- Think of a good way of using hand data
+## Stack
 
+- Next.js
+- React
+- ONNX Runtime Web
+- Tailwind CSS
 
-## To Run Locally:
+## Usage
 
-```bash
-npm run dev
-```
+### Manual Bidding
+1. Select a bid level (1-7)
+2. Choose a suit (♣, ♦, ♥, ♠, NT)
+3. Use special bids (Pass, X) as needed
+4. Click any bid in the sequence to remove it and subsequent bids
+
+### Automated Bidding
+- Click "+1" to generate a single bid
+- Click "Generate" to complete the entire auction
